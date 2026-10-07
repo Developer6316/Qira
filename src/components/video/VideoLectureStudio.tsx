@@ -435,8 +435,8 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                       <span>Core Mathematical Governing Derivation</span>
                     </div>
                     
-                    {/* Chalkboard LaTeX Formula */}
-                    <div className="py-3 px-4 rounded-xl bg-slate-900 border border-slate-800 font-mono text-base font-extrabold text-emerald-400 tracking-wide">
+                    {/* Chalkboard LaTeX Formula with mobile scroll safety */}
+                    <div className="py-2.5 sm:py-3 px-3 sm:px-4 rounded-xl bg-slate-900 border border-slate-800 font-mono text-xs sm:text-sm md:text-base font-extrabold text-emerald-400 tracking-wide overflow-x-auto max-w-full">
                       {currentScene.chalkboardEquation}
                     </div>
 
@@ -446,11 +446,11 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                   </div>
 
                   {/* Key Takeaways Carousel on Video */}
-                  <div className="flex flex-wrap items-center justify-center gap-2">
+                  <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2">
                     {currentScene.bulletPoints.map((bp, i) => (
                       <span
                         key={i}
-                        className="px-3 py-1 rounded-full bg-slate-900/90 text-slate-200 text-xs font-medium border border-slate-700 shadow-sm"
+                        className="px-2.5 sm:px-3 py-1 rounded-full bg-slate-900/90 text-slate-200 text-[11px] sm:text-xs font-medium border border-slate-700 shadow-sm"
                       >
                         • {bp}
                       </span>
@@ -460,8 +460,8 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
               </div>
 
               {/* Bottom Real-Time Narration Subtitle Banner */}
-              <div className="z-10 bg-slate-950/90 backdrop-blur-xs rounded-xl p-3.5 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between text-[11px] font-mono text-slate-400">
+              <div className="z-10 bg-slate-950/90 backdrop-blur-xs rounded-xl p-3 sm:p-3.5 border border-slate-800 space-y-1">
+                <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-slate-400">
                   <span className="text-indigo-400 flex items-center gap-1 font-bold">
                     <Volume2 className="w-3.5 h-3.5" /> Character Narration Voice (Spoken Aloud):
                   </span>
@@ -474,7 +474,7 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
             </div>
 
             {/* Video Player Control Bar */}
-            <div className="p-4 bg-white border-t border-slate-200 space-y-3">
+            <div className="p-3 sm:p-4 bg-white border-t border-slate-200 space-y-3">
               {/* Scrub Track */}
               <div
                 onClick={(e) => {
@@ -484,7 +484,7 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                   const targetSecs = ratio * currentLecture.totalDurationSeconds;
                   setElapsedSeconds(targetSecs);
                 }}
-                className="w-full bg-slate-200 h-2 rounded-full overflow-hidden relative cursor-pointer group"
+                className="w-full bg-slate-200 h-2 sm:h-2.5 rounded-full overflow-hidden relative cursor-pointer group"
               >
                 <div
                   className="h-full bg-gradient-to-r from-indigo-600 to-sky-500 transition-all duration-100"
@@ -492,12 +492,12 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                 />
               </div>
 
-              {/* Controls row */}
-              <div className="flex items-center justify-between text-xs text-slate-700">
-                <div className="flex items-center gap-3">
+              {/* Controls row - Responsive Wrap for Laptops and Mobile Devices */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-700">
+                <div className="flex items-center justify-between sm:justify-start gap-2 sm:gap-3">
                   <button
                     onClick={() => setIsPlaying(!isPlaying)}
-                    className="p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-md shadow-indigo-600/20"
+                    className="p-2 sm:p-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold transition-all shadow-md shadow-indigo-600/20 cursor-pointer"
                   >
                     {isPlaying ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                   </button>
@@ -505,7 +505,7 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                   <button
                     onClick={() => jumpToScene(Math.max(0, currentSceneIndex - 1))}
                     disabled={currentSceneIndex === 0}
-                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30"
+                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30 cursor-pointer"
                   >
                     <ChevronLeft className="w-4 h-4" />
                   </button>
@@ -513,7 +513,7 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                   <button
                     onClick={() => jumpToScene(Math.min(currentLecture.scenes.length - 1, currentSceneIndex + 1))}
                     disabled={currentSceneIndex === currentLecture.scenes.length - 1}
-                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30"
+                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 disabled:opacity-30 cursor-pointer"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
@@ -524,20 +524,20 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                       setCurrentSceneIndex(0);
                       setIsPlaying(false);
                     }}
-                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600"
+                    className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 cursor-pointer"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
                   </button>
 
-                  <span className="font-mono text-indigo-700 text-xs font-bold">
+                  <span className="font-mono text-indigo-700 text-xs font-bold pl-1">
                     {formatTime(elapsedSeconds)} / {currentLecture.totalDuration}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-3">
+                <div className="flex flex-wrap items-center justify-between sm:justify-end gap-2 sm:gap-3">
                   {/* Instructor Character Quick Selector */}
-                  <div className="hidden sm:flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[11px] font-mono font-bold">
-                    <span className="text-slate-500 px-1">Character:</span>
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl text-[10px] sm:text-[11px] font-mono font-bold">
+                    <span className="text-slate-500 px-1 hidden md:inline">Character:</span>
                     <button
                       type="button"
                       onClick={() => setAvatarStyle('ada')}
@@ -571,7 +571,7 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                   <button
                     type="button"
                     onClick={() => setCharacterVoiceEnabled(!characterVoiceEnabled)}
-                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[11px] font-bold transition-all border cursor-pointer ${
+                    className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-xl text-[10px] sm:text-[11px] font-bold transition-all border cursor-pointer ${
                       characterVoiceEnabled
                         ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
                         : 'bg-slate-100 text-slate-500 border-slate-200'
@@ -582,13 +582,13 @@ export const VideoLectureStudio: React.FC<VideoLectureStudioProps> = ({
                     <span>{characterVoiceEnabled ? 'Voice ON' : 'Voice OFF'}</span>
                   </button>
 
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-slate-500 font-mono text-[11px] font-semibold">Speed:</span>
+                  <div className="flex items-center gap-1">
+                    <span className="text-slate-500 font-mono text-[10px] sm:text-[11px] font-semibold hidden md:inline">Speed:</span>
                     {[1, 1.25, 1.5, 2].map((sp) => (
                       <button
                         key={sp}
                         onClick={() => setPlaybackSpeed(sp)}
-                        className={`px-2 py-0.5 rounded-md font-mono text-[10px] font-bold transition-colors cursor-pointer ${
+                        className={`px-1.5 sm:px-2 py-0.5 rounded-md font-mono text-[10px] font-bold transition-colors cursor-pointer ${
                           playbackSpeed === sp
                             ? 'bg-indigo-600 text-white'
                             : 'bg-slate-100 text-slate-700 hover:bg-slate-200'

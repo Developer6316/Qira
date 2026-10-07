@@ -234,34 +234,41 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
         </div>
       </div>
 
-      {/* Student Upload & Auto-Video Synthesis Modal */}
-      {isStudentModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-150">
-          <div className="relative w-full max-w-2xl bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200/80 bg-slate-50/80">
+      {/* Student & Admin Ingestion Modal with Mobile Scroll Safety */}
+      {(isStudentModalOpen || isUploadModalOpen) && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60 backdrop-blur-md animate-in fade-in duration-150">
+          <div className="relative w-full max-w-2xl max-h-[92vh] flex flex-col bg-white/95 backdrop-blur-xl border border-white/80 rounded-3xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between px-5 sm:px-6 py-4 border-b border-slate-200/80 bg-slate-50/80 shrink-0">
               <div className="flex items-center gap-2.5">
-                <div className="p-2.5 rounded-2xl bg-indigo-600 text-white shadow-xs">
-                  <Sparkles className="w-5 h-5" />
+                <div className="p-2 sm:p-2.5 rounded-2xl bg-indigo-600 text-white shadow-xs">
+                  <Sparkles className="w-4 h-4 sm:w-5 sm:h-5" />
                 </div>
                 <div>
-                  <h3 className="font-black text-slate-900 text-sm tracking-tight">Upload Notes $\to$ Understand $\to$ Synthesize AI Video</h3>
-                  <p className="text-xs text-slate-500">QIRA will chunk your notes, ground the AI Tutor, and build a chalkboard video</p>
+                  <h3 className="font-black text-slate-900 text-xs sm:text-sm tracking-tight">
+                    {isUploadModalOpen ? 'Admin Course Material Ingestion' : 'Upload Notes → Ground AI Tutor → Synthesize Video'}
+                  </h3>
+                  <p className="text-[11px] sm:text-xs text-slate-500">
+                    QIRA will chunk your content, extract mathematical invariants, and bind citations
+                  </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={() => setIsStudentModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 text-sm font-mono p-1 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
+                onClick={() => {
+                  setIsStudentModalOpen(false);
+                  setIsUploadModalOpen(false);
+                }}
+                className="text-slate-400 hover:text-slate-700 text-sm font-mono p-1.5 rounded-xl hover:bg-slate-200 transition-colors cursor-pointer"
               >
                 ✕
               </button>
             </div>
 
-            <div className="p-6 space-y-4">
+            <div className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(92vh-130px)]">
               {/* Quick Template Fill Buttons */}
               <div className="space-y-1.5">
                 <span className="text-[11px] font-mono text-slate-500 uppercase font-bold">Or Pick a High-Yield STEM Study Topic:</span>
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
                   {sampleMaterialTemplates.map((tpl, i) => (
                     <button
                       key={i}
@@ -273,7 +280,7 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
                         setCustomType(tpl.type);
                         setCustomContent(tpl.content);
                       }}
-                      className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 text-xs font-semibold text-slate-700 transition-all cursor-pointer"
+                      className="px-2.5 sm:px-3 py-1 sm:py-1.5 rounded-xl bg-slate-100 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200 hover:border-indigo-200 text-[11px] sm:text-xs font-semibold text-slate-700 transition-all cursor-pointer"
                     >
                       {tpl.topic}
                     </button>
@@ -281,7 +288,7 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-700">Document Title</label>
                   <input
@@ -308,7 +315,7 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
               <div className="space-y-1">
                 <label className="text-xs font-bold text-slate-700">Study Notes / Formula Text / Transcript</label>
                 <textarea
-                  rows={6}
+                  rows={5}
                   required
                   value={customContent}
                   onChange={(e) => setCustomContent(e.target.value)}
@@ -317,11 +324,14 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-slate-200">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2.5 sm:gap-3 pt-3 border-t border-slate-200">
                 <button
                   type="button"
-                  onClick={() => setIsStudentModalOpen(false)}
-                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                  onClick={() => {
+                    setIsStudentModalOpen(false);
+                    setIsUploadModalOpen(false);
+                  }}
+                  className="px-4 py-2.5 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer order-2 sm:order-1 text-center"
                 >
                   Cancel
                 </button>
@@ -330,7 +340,7 @@ export const MultimodalIngestion: React.FC<MultimodalIngestionProps> = ({
                   type="button"
                   onClick={() => executeIngestAndGenerateVideo(customTitle, customTopic, customType, customContent)}
                   disabled={isUploading || !customTitle.trim()}
-                  className="px-6 py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs flex items-center gap-2 shadow-lg transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50"
+                  className="px-5 sm:px-6 py-2.5 sm:py-3 rounded-2xl bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-lg transition-all hover:scale-[1.02] cursor-pointer disabled:opacity-50 order-1 sm:order-2"
                 >
                   {isUploading ? (
                     <>
