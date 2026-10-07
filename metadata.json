@@ -1,0 +1,7 @@
+{
+  "name": "QIRA - Closed-Loop AI Learning & Cognitive Mastery Engine",
+  "description": "Source-grounded multimodal AI learning system with claim-level verification, prerequisite knowledge graph, root-cause adaptive tutoring, and scientific RAGAS evaluation.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
