@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { ChatMessage, SourceCitation, IngestedMaterial, GroundedClaim } from '../../types';
 import { sendTutorQuery } from '../../services/api';
 import { 
@@ -17,9 +17,12 @@ import {
   Cpu,
   Layers,
   HelpCircle,
-  Clock
+  Clock,
+  Mic,
+  MicOff,
+  Radio
 } from 'lucide-react';
-import { playClickSound, playSwooshSound } from '../../utils/soundEffects';
+import { playClickSound, playSuccessChime, playSwooshSound } from '../../utils/soundEffects';
 
 interface GroundedTutorChatProps {
   materials: IngestedMaterial[];
@@ -62,6 +65,101 @@ Select an active source above or ask any question from your materials!`,
   const [isLoading, setIsLoading] = useState(false);
   const [strictMode, setStrictMode] = useState(true);
   const [expandedClaimMessageId, setExpandedClaimMessageId] = useState<string | null>(null);
+  
+  // Speech-to-Text Microphone State
+  const [isListening, setIsListening] = useState(false);
+  const [speechError, setSpeechError] = useState<string | null>(null);
+  const recognitionRef = useRef<any>(null);
+
+  // Stop speech recognition when component unmounts
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {
+          // ignore
+        }
+      }
+    };
+  }, []);
+
+  const startSpeechRecognition = () => {
+    setSpeechError(null);
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+    if (!SpeechRecognition) {
+      setSpeechError('Speech recognition is not supported in this browser. Please use Chrome, Edge, or Safari.');
+      return;
+    }
+
+    try {
+      if (recognitionRef.current) {
+        try {
+          recognitionRef.current.abort();
+        } catch {}
+      }
+
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = 'en-US';
+
+      recognition.onstart = () => {
+        setIsListening(true);
+        playClickSound();
+      };
+
+      recognition.onresult = (event: any) => {
+        let transcript = '';
+        for (let i = 0; i < event.results.length; i++) {
+          transcript += event.results[i][0].transcript;
+        }
+        if (transcript.trim()) {
+          setInputValue(transcript);
+        }
+      };
+
+      recognition.onerror = (event: any) => {
+        console.warn('Speech recognition error:', event.error);
+        if (event.error === 'not-allowed') {
+          setSpeechError('Microphone permission denied. Please allow microphone access in your browser settings.');
+        } else if (event.error !== 'no-speech') {
+          setSpeechError(`Microphone notice: ${event.error}`);
+        }
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (err: any) {
+      console.error('Error starting speech recognition:', err);
+      setSpeechError('Could not start microphone recording. Please check browser permissions.');
+      setIsListening(false);
+    }
+  };
+
+  const stopSpeechRecognition = () => {
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch {}
+    }
+    setIsListening(false);
+    playClickSound();
+  };
+
+  const toggleSpeechRecognition = () => {
+    if (isListening) {
+      stopSpeechRecognition();
+    } else {
+      startSpeechRecognition();
+    }
+  };
 
   // Active chunks filtered by selected material
   const activeMaterial = materials.find(m => m.id === selectedMaterialFilter);
@@ -70,6 +168,9 @@ Select an active source above or ask any question from your materials!`,
     : (activeMaterial?.chunks || materials.flatMap(m => m.chunks));
 
   const handleSendMessage = async (customPrompt?: string) => {
+    if (isListening) {
+      stopSpeechRecognition();
+    }
     const textToSend = customPrompt || inputValue;
     if (!textToSend.trim() || isLoading) return;
 
@@ -345,6 +446,58 @@ Select an active source above or ask any question from your materials!`,
           )}
         </div>
 
+        {/* Live Speech-to-Text Visual Feedback Banner */}
+        {isListening && (
+          <div className="px-4 py-2.5 bg-gradient-to-r from-rose-500/10 via-purple-500/10 to-indigo-500/10 border-t border-b border-rose-200/80 flex items-center justify-between text-xs font-mono text-rose-800 animate-in fade-in duration-150">
+            <div className="flex items-center gap-2 min-w-0 pr-2">
+              <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-ping shrink-0" />
+              <span className="font-bold shrink-0 flex items-center gap-1 text-rose-700">
+                <Mic className="w-3.5 h-3.5 animate-pulse" />
+                Listening:
+              </span>
+              <span className="italic truncate text-slate-700">
+                "{inputValue || 'Speak your question clearly into microphone...'}"
+              </span>
+            </div>
+
+            <div className="flex items-center gap-3 shrink-0">
+              {/* Animated Audio Equalizer Wave */}
+              <div className="hidden sm:flex items-center gap-0.5 h-3">
+                <span className="w-0.5 h-2 bg-rose-500 animate-pulse" />
+                <span className="w-0.5 h-3.5 bg-rose-500 animate-pulse delay-75" />
+                <span className="w-0.5 h-1.5 bg-rose-500 animate-pulse delay-150" />
+                <span className="w-0.5 h-3 bg-rose-500 animate-pulse delay-100" />
+                <span className="w-0.5 h-2 bg-rose-500 animate-pulse delay-200" />
+              </div>
+
+              <button
+                type="button"
+                onClick={stopSpeechRecognition}
+                className="text-[11px] font-bold text-rose-600 hover:text-rose-800 underline cursor-pointer"
+              >
+                Done Speaking
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* Speech Recognition Error Notice */}
+        {speechError && (
+          <div className="px-4 py-2 bg-amber-50 border-t border-b border-amber-200 text-xs font-mono text-amber-900 flex items-center justify-between animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{speechError}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setSpeechError(null)}
+              className="text-[10px] font-bold text-amber-700 hover:text-amber-900 underline ml-2 cursor-pointer"
+            >
+              Dismiss
+            </button>
+          </div>
+        )}
+
         {/* Input Bar */}
         <div className="p-4 bg-white border-t border-slate-200">
           <form
@@ -352,22 +505,54 @@ Select an active source above or ask any question from your materials!`,
               e.preventDefault();
               handleSendMessage();
             }}
-            className="flex items-center gap-3"
+            className="flex items-center gap-2 sm:gap-3"
           >
-            <input
-              type="text"
-              value={inputValue}
-              onChange={(e) => setInputValue(e.target.value)}
-              placeholder="Ask any question from uploaded materials or test off-material refusal..."
-              disabled={isLoading}
-              className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:border-indigo-500 focus:bg-white transition-colors"
-            />
+            <div className="relative flex-1 flex items-center">
+              <input
+                type="text"
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                placeholder={
+                  isListening 
+                    ? "Listening... speaking transcribes live here..." 
+                    : "Ask any question from uploaded materials or test off-material refusal..."
+                }
+                disabled={isLoading}
+                className={`w-full bg-slate-50 border rounded-xl pl-4 pr-12 py-3 text-sm text-slate-900 placeholder-slate-400 focus:outline-none focus:bg-white transition-all ${
+                  isListening
+                    ? 'border-rose-400 ring-2 ring-rose-400/20 bg-rose-50/20'
+                    : 'border-slate-200 focus:border-indigo-500'
+                }`}
+              />
+
+              {/* Speech-to-Text Microphone Recording Button */}
+              <button
+                type="button"
+                onClick={toggleSpeechRecognition}
+                disabled={isLoading}
+                className={`absolute right-2 p-2 rounded-lg transition-all cursor-pointer flex items-center justify-center ${
+                  isListening 
+                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30 animate-pulse' 
+                    : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 active:scale-95'
+                }`}
+                title={isListening ? "Listening... Click to stop recording" : "Record question with microphone (Speech-to-Text)"}
+                aria-label={isListening ? "Stop speech recording" : "Record voice question"}
+              >
+                {isListening ? (
+                  <MicOff className="w-4 h-4" />
+                ) : (
+                  <Mic className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+
             <button
               type="submit"
               disabled={!inputValue.trim() || isLoading}
-              className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all shadow-md shadow-indigo-600/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2"
+              className="px-4 sm:px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-sm transition-all shadow-md shadow-indigo-600/20 disabled:opacity-40 disabled:cursor-not-allowed flex items-center gap-2 cursor-pointer shrink-0"
+              title="Send question to Grounded Tutor"
             >
-              <span>Send</span>
+              <span className="hidden sm:inline">Send</span>
               <Send className="w-4 h-4" />
             </button>
           </form>

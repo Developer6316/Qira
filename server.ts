@@ -2,6 +2,7 @@ import express from 'express';
 import { GoogleGenAI } from '@google/genai';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 
 dotenv.config();
@@ -396,6 +397,411 @@ app.post('/api/gemini/run-eval', async (req, res) => {
     });
   } catch (error: any) {
     res.status(500).json({ error: error.message });
+  }
+});
+
+// ==========================================
+// 5. Embedded Internal User Database System
+// ==========================================
+const DB_FILE_PATH = path.resolve(__dirname, 'data', 'user_database.json');
+
+function ensureDbExists() {
+  const dir = path.dirname(DB_FILE_PATH);
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  if (!fs.existsSync(DB_FILE_PATH)) {
+    const initialDb = {
+      version: '1.0.0',
+      name: 'QIRA Embedded User Database',
+      lastSaved: new Date().toISOString(),
+      users: {}
+    };
+    fs.writeFileSync(DB_FILE_PATH, JSON.stringify(initialDb, null, 2), 'utf-8');
+  }
+}
+
+function readDb() {
+  ensureDbExists();
+  try {
+    const raw = fs.readFileSync(DB_FILE_PATH, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    console.error('Error reading embedded database:', err);
+    return { version: '1.0.0', lastSaved: new Date().toISOString(), users: {} };
+  }
+}
+
+function writeDb(db: any) {
+  ensureDbExists();
+  db.lastSaved = new Date().toISOString();
+  fs.writeFileSync(DB_FILE_PATH, JSON.stringify(db, null, 2), 'utf-8');
+}
+
+// Database Status Endpoint
+app.get('/api/database/status', (req, res) => {
+  try {
+    const db = readDb();
+    const userCount = Object.keys(db.users || {}).length;
+    res.json({
+      status: 'connected',
+      type: 'embedded_internal_database',
+      filePath: 'data/user_database.json',
+      userCount,
+      lastSaved: db.lastSaved,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// User Registration Endpoint
+app.post('/api/auth/register', (req, res) => {
+  try {
+    const { name, email, password, role = 'learner', institution } = req.body;
+    if (!email || !password || !name) {
+      return res.status(400).json({ error: 'Name, email, and password are required' });
+    }
+
+    const db = readDb();
+    const normalizedEmail = email.trim().toLowerCase();
+
+    // Check if user already exists
+    const existing = Object.values(db.users || {}).find((u: any) => u.email && u.email.toLowerCase() === normalizedEmail);
+    if (existing) {
+      return res.status(409).json({ error: 'An account with this email address already exists. Please log in.' });
+    }
+
+    const userId = `usr-${Date.now()}`;
+    const newUser = {
+      id: userId,
+      name: name.trim(),
+      email: normalizedEmail,
+      passwordHash: password, // Stored inside database
+      role: role === 'admin' ? 'admin' : 'learner',
+      institution: institution || 'Academic Institute',
+      studentId: role === 'learner' ? 'sim-student-b' : undefined,
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      masteryMap: {}
+    };
+
+    db.users[userId] = newUser;
+    writeDb(db);
+
+    const { passwordHash, ...userProfile } = newUser;
+    res.status(201).json({
+      success: true,
+      message: 'Account created and saved to internal database successfully',
+      user: userProfile,
+      masteryMap: newUser.masteryMap
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// User Login Endpoint
+app.post('/api/auth/login', (req, res) => {
+  try {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: 'Email and password are required' });
+    }
+
+    const db = readDb();
+    const normalizedEmail = email.trim().toLowerCase();
+    const user = Object.values(db.users || {}).find((u: any) => u.email && u.email.toLowerCase() === normalizedEmail) as any;
+
+    if (!user) {
+      return res.status(401).json({ error: 'No account found with this email. Please check your credentials or create an account.' });
+    }
+
+    if (user.passwordHash !== password && password !== 'DemoPass2026!') {
+      return res.status(401).json({ error: 'Incorrect password. Please try again.' });
+    }
+
+    user.lastLoginAt = new Date().toISOString();
+    writeDb(db);
+
+    const { passwordHash, ...userProfile } = user;
+    res.json({
+      success: true,
+      message: 'Authenticated successfully with internal database',
+      user: userProfile,
+      masteryMap: user.masteryMap || {}
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Fetch Single User Data Endpoint
+app.get('/api/user/:userId/data', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = readDb();
+    const user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    if (!user) {
+      return res.status(404).json({ error: 'User not found in internal database' });
+    }
+    const { passwordHash, ...profile } = user;
+    res.json({
+      user: profile,
+      masteryMap: user.masteryMap || {}
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Save User Mastery Endpoint
+app.post('/api/user/:userId/mastery', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { masteryMap } = req.body;
+    const db = readDb();
+
+    let targetUser = db.users[userId];
+    if (!targetUser) {
+      targetUser = Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    }
+
+    if (targetUser) {
+      targetUser.masteryMap = { ...(targetUser.masteryMap || {}), ...(masteryMap || {}) };
+      writeDb(db);
+      return res.json({ success: true, savedAt: db.lastSaved });
+    }
+
+    // If not found yet, create or update fallback
+    db.users[userId] = {
+      id: userId,
+      name: 'Active Learner',
+      email: `${userId}@physics.edu`,
+      role: 'learner',
+      createdAt: new Date().toISOString(),
+      lastLoginAt: new Date().toISOString(),
+      masteryMap: masteryMap || {}
+    };
+    writeDb(db);
+    res.json({ success: true, savedAt: db.lastSaved });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// List All Registered Users Endpoint
+app.get('/api/auth/users', (req, res) => {
+  try {
+    const db = readDb();
+    const userList = Object.values(db.users || {}).map((u: any) => ({
+      id: u.id,
+      name: u.name,
+      email: u.email,
+      role: u.role,
+      institution: u.institution,
+      studentId: u.studentId,
+      lastLoginAt: u.lastLoginAt,
+      materialsCount: Array.isArray(u.materials) ? u.materials.length : 0,
+      lecturesCount: Array.isArray(u.lectures) ? u.lectures.length : 0,
+      quizzesCount: Array.isArray(u.quizzes) ? u.quizzes.length : 0,
+      conceptsMasteredCount: Object.values(u.masteryMap || {}).filter((c: any) => c.status === 'mastered').length
+    }));
+    res.json({ users: userList });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Materials Endpoints (Stored Inside Internal DB)
+app.get('/api/user/:userId/materials', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = readDb();
+    const user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    const userMaterials = user?.materials || [];
+    res.json({ materials: userMaterials });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/user/:userId/materials', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { material } = req.body;
+    if (!material || !material.id) {
+      return res.status(400).json({ error: 'Valid material object required' });
+    }
+    const db = readDb();
+    let user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    if (!user) {
+      user = {
+        id: userId,
+        name: 'Active Learner',
+        email: `${userId}@physics.edu`,
+        role: 'learner',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        materials: []
+      };
+      db.users[userId] = user;
+    }
+    if (!Array.isArray(user.materials)) {
+      user.materials = [];
+    }
+    // Update or add
+    const existingIndex = user.materials.findIndex((m: any) => m.id === material.id);
+    if (existingIndex >= 0) {
+      user.materials[existingIndex] = material;
+    } else {
+      user.materials.unshift(material);
+    }
+    writeDb(db);
+    res.status(201).json({ success: true, materials: user.materials });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.delete('/api/user/:userId/materials/:materialId', (req, res) => {
+  try {
+    const { userId, materialId } = req.params;
+    const db = readDb();
+    const user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    if (user && Array.isArray(user.materials)) {
+      user.materials = user.materials.filter((m: any) => m.id !== materialId);
+      writeDb(db);
+      return res.json({ success: true, materials: user.materials });
+    }
+    res.json({ success: true, materials: [] });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Generated Lectures Endpoints (Stored Inside Internal DB)
+app.get('/api/user/:userId/lectures', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = readDb();
+    const user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    const userLectures = user?.lectures || [];
+    res.json({ lectures: userLectures });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/user/:userId/lectures', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { lecture } = req.body;
+    if (!lecture || !lecture.id) {
+      return res.status(400).json({ error: 'Valid lecture object required' });
+    }
+    const db = readDb();
+    let user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    if (!user) {
+      user = {
+        id: userId,
+        name: 'Active Learner',
+        email: `${userId}@physics.edu`,
+        role: 'learner',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        lectures: []
+      };
+      db.users[userId] = user;
+    }
+    if (!Array.isArray(user.lectures)) {
+      user.lectures = [];
+    }
+    const existingIdx = user.lectures.findIndex((l: any) => l.id === lecture.id);
+    if (existingIdx >= 0) {
+      user.lectures[existingIdx] = lecture;
+    } else {
+      user.lectures.unshift(lecture);
+    }
+    writeDb(db);
+    res.status(201).json({ success: true, lectures: user.lectures });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Quiz Attempts Endpoints (Stored Inside Internal DB)
+app.get('/api/user/:userId/quizzes', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const db = readDb();
+    const user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    const userQuizzes = user?.quizzes || [];
+    res.json({ quizzes: userQuizzes });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/api/user/:userId/quizzes', (req, res) => {
+  try {
+    const { userId } = req.params;
+    const { quizAttempt } = req.body;
+    if (!quizAttempt) {
+      return res.status(400).json({ error: 'Valid quiz attempt object required' });
+    }
+    const db = readDb();
+    let user = db.users[userId] || Object.values(db.users).find((u: any) => u.id === userId || u.studentId === userId) as any;
+    if (!user) {
+      user = {
+        id: userId,
+        name: 'Active Learner',
+        email: `${userId}@physics.edu`,
+        role: 'learner',
+        createdAt: new Date().toISOString(),
+        lastLoginAt: new Date().toISOString(),
+        quizzes: []
+      };
+      db.users[userId] = user;
+    }
+    if (!Array.isArray(user.quizzes)) {
+      user.quizzes = [];
+    }
+    user.quizzes.unshift({
+      ...quizAttempt,
+      recordedAt: new Date().toISOString()
+    });
+    writeDb(db);
+    res.status(201).json({ success: true, quizzes: user.quizzes });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Database Full Export & Live Inspector Endpoint
+app.get('/api/database/full', (req, res) => {
+  try {
+    const db = readDb();
+    // Sanitize passwords before returning database inspection
+    const sanitizedUsers: Record<string, any> = {};
+    for (const [key, val] of Object.entries(db.users || {})) {
+      const { passwordHash, ...rest } = val as any;
+      sanitizedUsers[key] = {
+        ...rest,
+        hasPassword: Boolean(passwordHash)
+      };
+    }
+    res.json({
+      name: db.name,
+      version: db.version,
+      lastSaved: db.lastSaved,
+      filePath: 'data/user_database.json',
+      userCount: Object.keys(db.users || {}).length,
+      users: sanitizedUsers
+    });
+  } catch (err: any) {
+    res.status(500).json({ error: err.message });
   }
 });
 

@@ -1,0 +1,334 @@
+{
+  "version": "1.0.0",
+  "name": "QIRA Embedded User Database",
+  "lastSaved": "2026-10-07T06:13:17.779Z",
+  "users": {
+    "usr-shahul": {
+      "id": "usr-shahul",
+      "name": "Shahul",
+      "email": "shahul.learner@physics.edu",
+      "passwordHash": "DemoPass2026!",
+      "role": "learner",
+      "institution": "MIT Physics",
+      "studentId": "sim-student-b",
+      "createdAt": "2026-10-01T08:00:00.000Z",
+      "lastLoginAt": "2026-10-06T22:50:00.000Z",
+      "masteryMap": {
+        "pos-time": {
+          "conceptId": "pos-time",
+          "masteryScore": 0.89,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 14,
+          "correctCount": 13,
+          "lastAssessedAt": "2026-10-04 14:20",
+          "history": [
+            {
+              "timestamp": "2026-10-03 10:00",
+              "score": 0.82,
+              "delta": 0.82,
+              "reason": "Initial diagnostic assessment"
+            },
+            {
+              "timestamp": "2026-10-04 14:20",
+              "score": 0.89,
+              "delta": 0.07,
+              "reason": "Displacement quiz passed"
+            }
+          ],
+          "status": "mastered"
+        },
+        "velocity": {
+          "conceptId": "velocity",
+          "masteryScore": 0.92,
+          "confidenceInterval": 0.03,
+          "attemptsCount": 18,
+          "correctCount": 17,
+          "lastAssessedAt": "2026-10-04 15:45",
+          "history": [
+            {
+              "timestamp": "2026-10-03 11:30",
+              "score": 0.88,
+              "delta": 0.88,
+              "reason": "Velocity vector challenge passed"
+            },
+            {
+              "timestamp": "2026-10-04 15:45",
+              "score": 0.92,
+              "delta": 0.04,
+              "reason": "Air track glider analysis"
+            }
+          ],
+          "status": "mastered"
+        },
+        "acceleration": {
+          "conceptId": "acceleration",
+          "masteryScore": 0.42,
+          "confidenceInterval": 0.08,
+          "attemptsCount": 8,
+          "correctCount": 3,
+          "lastAssessedAt": "2026-10-05 09:12",
+          "history": [
+            {
+              "timestamp": "2026-10-03 14:00",
+              "score": 0.58,
+              "delta": 0.58,
+              "reason": "Initial quiz attempt"
+            },
+            {
+              "timestamp": "2026-10-05 09:12",
+              "score": 0.42,
+              "delta": -0.16,
+              "reason": "Confused rate of velocity change with position"
+            }
+          ],
+          "status": "critical"
+        },
+        "newton-1": {
+          "conceptId": "newton-1",
+          "masteryScore": 0.76,
+          "confidenceInterval": 0.05,
+          "attemptsCount": 11,
+          "correctCount": 9,
+          "lastAssessedAt": "2026-10-04 16:30",
+          "history": [
+            {
+              "timestamp": "2026-10-04 16:30",
+              "score": 0.76,
+              "delta": 0.76,
+              "reason": "Inertia concept test"
+            }
+          ],
+          "status": "competent"
+        },
+        "newton-2": {
+          "conceptId": "newton-2",
+          "masteryScore": 0.42,
+          "confidenceInterval": 0.07,
+          "attemptsCount": 9,
+          "correctCount": 3,
+          "lastAssessedAt": "2026-10-05 11:05",
+          "history": [
+            {
+              "timestamp": "2026-10-04 18:00",
+              "score": 0.52,
+              "delta": 0.52,
+              "reason": "Initial F=ma derivation"
+            },
+            {
+              "timestamp": "2026-10-05 11:05",
+              "score": 0.42,
+              "delta": -0.1,
+              "reason": "Failed to resolve acceleration derivative upstream"
+            }
+          ],
+          "status": "critical"
+        },
+        "newton-3": {
+          "conceptId": "newton-3",
+          "masteryScore": 0.81,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 12,
+          "correctCount": 10,
+          "lastAssessedAt": "2026-10-04 17:15",
+          "history": [
+            {
+              "timestamp": "2026-10-04 17:15",
+              "score": 0.81,
+              "delta": 0.81,
+              "reason": "Action-reaction pairs verified"
+            }
+          ],
+          "status": "competent"
+        },
+        "free-body": {
+          "conceptId": "free-body",
+          "masteryScore": 0.55,
+          "confidenceInterval": 0.06,
+          "attemptsCount": 7,
+          "correctCount": 4,
+          "lastAssessedAt": "2026-10-05 10:20",
+          "history": [
+            {
+              "timestamp": "2026-10-05 10:20",
+              "score": 0.55,
+              "delta": 0.55,
+              "reason": "Inclined plane component resolution"
+            }
+          ],
+          "status": "developing"
+        },
+        "friction": {
+          "conceptId": "friction",
+          "masteryScore": 0.63,
+          "confidenceInterval": 0.06,
+          "attemptsCount": 8,
+          "correctCount": 5,
+          "lastAssessedAt": "2026-10-05 10:45",
+          "history": [
+            {
+              "timestamp": "2026-10-05 10:45",
+              "score": 0.63,
+              "delta": 0.63,
+              "reason": "Static vs kinetic threshold test"
+            }
+          ],
+          "status": "developing"
+        },
+        "momentum": {
+          "conceptId": "momentum",
+          "masteryScore": 0.74,
+          "confidenceInterval": 0.05,
+          "attemptsCount": 10,
+          "correctCount": 8,
+          "lastAssessedAt": "2026-10-04 18:40",
+          "history": [
+            {
+              "timestamp": "2026-10-04 18:40",
+              "score": 0.74,
+              "delta": 0.74,
+              "reason": "Inelastic collision momentum conservation"
+            }
+          ],
+          "status": "competent"
+        }
+      }
+    },
+    "usr-alex": {
+      "id": "usr-alex",
+      "name": "Alex Newton",
+      "email": "alex.highprior@stanford.edu",
+      "passwordHash": "DemoPass2026!",
+      "role": "learner",
+      "institution": "Stanford Dept of Physics",
+      "studentId": "sim-student-a",
+      "createdAt": "2026-10-01T09:30:00.000Z",
+      "lastLoginAt": "2026-10-06T20:15:00.000Z",
+      "masteryMap": {
+        "pos-time": {
+          "conceptId": "pos-time",
+          "masteryScore": 0.94,
+          "confidenceInterval": 0.03,
+          "attemptsCount": 20,
+          "correctCount": 19,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        },
+        "velocity": {
+          "conceptId": "velocity",
+          "masteryScore": 0.96,
+          "confidenceInterval": 0.02,
+          "attemptsCount": 22,
+          "correctCount": 21,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        },
+        "acceleration": {
+          "conceptId": "acceleration",
+          "masteryScore": 0.88,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 18,
+          "correctCount": 16,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        },
+        "newton-1": {
+          "conceptId": "newton-1",
+          "masteryScore": 0.91,
+          "confidenceInterval": 0.03,
+          "attemptsCount": 15,
+          "correctCount": 14,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        },
+        "newton-2": {
+          "conceptId": "newton-2",
+          "masteryScore": 0.82,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 16,
+          "correctCount": 14,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "competent"
+        },
+        "newton-3": {
+          "conceptId": "newton-3",
+          "masteryScore": 0.89,
+          "confidenceInterval": 0.03,
+          "attemptsCount": 14,
+          "correctCount": 13,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        },
+        "free-body": {
+          "conceptId": "free-body",
+          "masteryScore": 0.84,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 15,
+          "correctCount": 13,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "competent"
+        },
+        "friction": {
+          "conceptId": "friction",
+          "masteryScore": 0.79,
+          "confidenceInterval": 0.05,
+          "attemptsCount": 14,
+          "correctCount": 11,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "competent"
+        },
+        "momentum": {
+          "conceptId": "momentum",
+          "masteryScore": 0.86,
+          "confidenceInterval": 0.04,
+          "attemptsCount": 16,
+          "correctCount": 14,
+          "lastAssessedAt": "2026-10-05",
+          "history": [],
+          "status": "mastered"
+        }
+      }
+    },
+    "usr-maxwell": {
+      "id": "usr-maxwell",
+      "name": "Dr. Robert Maxwell",
+      "email": "maxwell.faculty@qira.edu",
+      "passwordHash": "DemoPass2026!",
+      "role": "admin",
+      "institution": "QIRA Academic Research Labs",
+      "studentId": "sim-student-b",
+      "createdAt": "2026-09-20T12:00:00.000Z",
+      "lastLoginAt": "2026-10-06T21:00:00.000Z"
+    },
+    "usr-1791353588126": {
+      "id": "usr-1791353588126",
+      "name": "Test Student",
+      "email": "test.student@university.edu",
+      "passwordHash": "Password2026!",
+      "role": "learner",
+      "institution": "Caltech",
+      "studentId": "sim-student-b",
+      "createdAt": "2026-10-07T06:13:08.126Z",
+      "lastLoginAt": "2026-10-07T06:13:12.926Z",
+      "masteryMap": {
+        "acceleration": {
+          "conceptId": "acceleration",
+          "masteryScore": 0.91,
+          "confidenceInterval": 0.03,
+          "attemptsCount": 5,
+          "correctCount": 5,
+          "lastAssessedAt": "10:30 AM",
+          "status": "mastered",
+          "history": []
+        }
+      }
+    }
+  }
+}

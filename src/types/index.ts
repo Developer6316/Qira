@@ -232,6 +232,7 @@ export interface UserProfile {
   institution?: string;
   studentId?: string;
   createdAt: string;
+  explicitlyLoggedIn?: boolean;
 }
 
 

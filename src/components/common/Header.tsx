@@ -28,7 +28,10 @@ import {
   VolumeX,
   LogIn,
   UserPlus,
-  LogOut
+  LogOut,
+  Database,
+  Search,
+  Keyboard
 } from 'lucide-react';
 import { UserRole, UserProfile } from '../../types';
 import { isAudioMuted, toggleAudioMuted, playClickSound, playSwooshSound } from '../../utils/soundEffects';
@@ -57,6 +60,9 @@ interface HeaderProps {
   currentUser?: UserProfile | null;
   onOpenAuth?: (mode?: 'login' | 'signup') => void;
   onSignOut?: () => void;
+  onOpenDatabaseInspector?: () => void;
+  onOpenCommandPalette?: () => void;
+  onOpenKeyboardShortcuts?: () => void;
 }
 
 interface NavGroup {
@@ -71,6 +77,7 @@ interface NavGroup {
     badge?: string;
     highlight?: boolean;
     adminOnly?: boolean;
+    shortcut?: string;
   }[];
 }
 
@@ -87,7 +94,10 @@ export const Header: React.FC<HeaderProps> = ({
   onRequestAdminAuth,
   currentUser,
   onOpenAuth,
-  onSignOut
+  onSignOut,
+  onOpenDatabaseInspector,
+  onOpenCommandPalette,
+  onOpenKeyboardShortcuts
 }) => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [accountMenuOpen, setAccountMenuOpen] = useState(false);
@@ -140,14 +150,16 @@ export const Header: React.FC<HeaderProps> = ({
           label: '1. Multimodal Ingestion',
           description: 'Upload textbooks, video transcripts, and custom slides',
           icon: BookOpen,
-          badge: 'Materials'
+          badge: 'Materials',
+          shortcut: 'Ctrl+1'
         },
         {
           id: 'graph',
           label: '2. Concept Knowledge Graph',
           description: 'Prerequisite DAG with 9 mechanics competency nodes',
           icon: Network,
-          badge: '9 Nodes'
+          badge: '9 Nodes',
+          shortcut: 'Ctrl+2'
         }
       ]
     },
@@ -161,13 +173,15 @@ export const Header: React.FC<HeaderProps> = ({
           label: '3. Grounded Tutor Chat',
           description: 'Verified sentence claims and anti-hallucination refusal',
           icon: MessageSquareQuote,
-          badge: 'Verified'
+          badge: 'Verified',
+          shortcut: 'Ctrl+3'
         },
         {
           id: 'quiz',
           label: '4. Adaptive Quiz Engine',
           description: 'Bayesian knowledge tracing with real-time diagnostics',
-          icon: CheckSquare
+          icon: CheckSquare,
+          shortcut: 'Ctrl+4'
         },
         {
           id: 'remediation',
@@ -175,14 +189,16 @@ export const Header: React.FC<HeaderProps> = ({
           description: 'Prerequisite gap backtracking and targeted mini-lessons',
           icon: GitBranch,
           highlight: true,
-          badge: remediationStageActive ? 'ACTIVE LOOP' : 'Demo 4'
+          badge: remediationStageActive ? 'ACTIVE LOOP' : 'Demo 4',
+          shortcut: 'Ctrl+5'
         },
         {
           id: 'video-studio',
           label: '🎥 AI Video Lecture Studio',
           description: 'Synthesize synchronized chalkboard videos with narration',
           icon: PlayCircle,
-          badge: 'AI Studio'
+          badge: 'AI Studio',
+          shortcut: 'Ctrl+6'
         }
       ]
     },
@@ -193,16 +209,18 @@ export const Header: React.FC<HeaderProps> = ({
       items: [
         {
           id: 'dashboard',
-          label: userRole === 'admin' ? '6. Cohort & Mastery Matrix' : '6. Personalization Dashboard',
+          label: userRole === 'admin' ? '7. Cohort & Mastery Matrix' : '7. Personalization Dashboard',
           description: 'Bayesian mastery progress, cohort risk radar, and action plan',
-          icon: BarChart3
+          icon: BarChart3,
+          shortcut: 'Ctrl+7'
         },
         {
           id: 'evaluation',
-          label: '7. Scientific Eval Lab',
+          label: '8. Scientific Eval Lab',
           description: 'RAGAS benchmark scores (Faithfulness 0.948) & cohort simulations',
           icon: FlaskConical,
-          badge: 'RAGAS 0.94'
+          badge: 'RAGAS 0.94',
+          shortcut: 'Ctrl+8'
         }
       ]
     }
@@ -326,6 +344,32 @@ export const Header: React.FC<HeaderProps> = ({
             </select>
           </div>
 
+          {/* Mobile Quick Search & Shortcuts Action Pills */}
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenCommandPalette?.();
+              }}
+              className="py-2.5 px-3 rounded-xl bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 text-indigo-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+            >
+              <Search className="w-3.5 h-3.5" />
+              <span>Search (⌘K)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setMobileMenuOpen(false);
+                onOpenKeyboardShortcuts?.();
+              }}
+              className="py-2.5 px-3 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+            >
+              <Keyboard className="w-3.5 h-3.5" />
+              <span>Shortcuts (?)</span>
+            </button>
+          </div>
+
           {/* Grouped Nav Items */}
           <div className="space-y-5">
             {navGroups.map((group) => (
@@ -375,50 +419,90 @@ export const Header: React.FC<HeaderProps> = ({
         {/* Drawer User Account Card & Demo Tour */}
         <div className="p-4 border-t border-slate-100 bg-slate-50 space-y-2.5">
           {currentUser ? (
-            <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
-                  {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between bg-white p-2.5 rounded-xl border border-slate-200">
+                <div className="flex items-center gap-2">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white font-bold text-xs flex items-center justify-center">
+                    {currentUser.name ? currentUser.name.charAt(0).toUpperCase() : 'U'}
+                  </div>
+                  <div className="truncate max-w-[130px]">
+                    <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
+                    <div className="text-[10px] text-slate-500 font-mono capitalize">{currentUser.role}</div>
+                  </div>
                 </div>
-                <div className="truncate max-w-[130px]">
-                  <div className="text-xs font-bold text-slate-900 truncate">{currentUser.name}</div>
-                  <div className="text-[10px] text-slate-500 font-mono capitalize">{currentUser.role}</div>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onOpenAuth?.('login');
+                    }}
+                    className="text-[11px] text-indigo-600 font-bold px-2 py-1 rounded-lg hover:bg-indigo-50 cursor-pointer"
+                  >
+                    Switch
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      onSignOut?.();
+                    }}
+                    className="text-[11px] text-rose-600 font-bold px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer"
+                  >
+                    Sign Out
+                  </button>
                 </div>
               </div>
+
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onSignOut?.();
+                  onOpenDatabaseInspector?.();
                 }}
-                className="text-[11px] text-rose-600 font-bold px-2 py-1 rounded-lg hover:bg-rose-50 cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-mono font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                Sign Out
+                <Database className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Inspect Database (data/user_database.json)</span>
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-2">
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth?.('login');
+                  }}
+                  className="py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Log In</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    onOpenAuth?.('signup');
+                  }}
+                  className="py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
+                >
+                  <UserPlus className="w-3.5 h-3.5" />
+                  <span>Sign Up</span>
+                </button>
+              </div>
+
               <button
                 type="button"
                 onClick={() => {
                   setMobileMenuOpen(false);
-                  onOpenAuth?.('login');
+                  onOpenDatabaseInspector?.();
                 }}
-                className="py-2.5 rounded-xl bg-white border border-slate-200 text-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2 px-3 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-mono font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
               >
-                <LogIn className="w-3.5 h-3.5" />
-                <span>Log In</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setMobileMenuOpen(false);
-                  onOpenAuth?.('signup');
-                }}
-                className="py-2.5 rounded-xl bg-indigo-600 text-white text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
-              >
-                <UserPlus className="w-3.5 h-3.5" />
-                <span>Sign Up</span>
+                <Database className="w-3.5 h-3.5 text-indigo-600" />
+                <span>Internal DB Live (user_database.json)</span>
               </button>
             </div>
           )}
@@ -526,17 +610,26 @@ export const Header: React.FC<HeaderProps> = ({
                                       <span className={`text-xs font-bold ${isItemActive ? 'text-white' : 'text-slate-900'}`}>
                                         {item.label}
                                       </span>
-                                      {item.badge && (
-                                        <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
-                                          isItemActive
-                                            ? 'bg-white/20 text-white'
-                                            : item.highlight
-                                            ? 'bg-amber-100 text-amber-800'
-                                            : 'bg-slate-100 text-slate-600'
-                                        }`}>
-                                          {item.badge}
-                                        </span>
-                                      )}
+                                      <div className="flex items-center gap-1.5">
+                                        {item.shortcut && (
+                                          <kbd className={`text-[9px] font-mono font-bold px-1 py-0.5 rounded ${
+                                            isItemActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                                          }`}>
+                                            {item.shortcut}
+                                          </kbd>
+                                        )}
+                                        {item.badge && (
+                                          <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-semibold ${
+                                            isItemActive
+                                              ? 'bg-white/20 text-white'
+                                              : item.highlight
+                                              ? 'bg-amber-100 text-amber-800'
+                                              : 'bg-slate-100 text-slate-600'
+                                          }`}>
+                                            {item.badge}
+                                          </span>
+                                        )}
+                                      </div>
                                     </div>
                                     <p className={`text-[11px] leading-tight truncate mt-0.5 ${
                                       isItemActive ? 'text-indigo-100' : 'text-slate-500'
@@ -590,6 +683,38 @@ export const Header: React.FC<HeaderProps> = ({
                 </div>
               )}
 
+              {/* Global Command Palette & Concept Search Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  onOpenCommandPalette?.();
+                }}
+                className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs text-slate-600 hover:text-slate-900 transition-all cursor-pointer shadow-2xs group"
+                title="Global Command Palette & Concept Search (Ctrl+K or ⌘K)"
+              >
+                <Search className="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition-transform" />
+                <span className="hidden lg:inline font-medium text-slate-600">Search concepts & commands...</span>
+                <span className="lg:hidden font-medium text-slate-600">Search...</span>
+                <kbd className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-white border border-slate-300 text-slate-500 shadow-2xs">
+                  ⌘K
+                </kbd>
+              </button>
+
+              {/* Keyboard Shortcuts Cheat Sheet Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  onOpenKeyboardShortcuts?.();
+                }}
+                className="p-2 rounded-xl bg-slate-100 text-slate-600 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 transition-all cursor-pointer shadow-2xs"
+                title="Keyboard Shortcuts Cheat Sheet (? or Ctrl+/)"
+                aria-label="Keyboard Shortcuts"
+              >
+                <Keyboard className="w-4 h-4" />
+              </button>
+
               {/* Audio Sound Effects Mute Toggle Button */}
               <button
                 type="button"
@@ -621,6 +746,21 @@ export const Header: React.FC<HeaderProps> = ({
                   <option value="sim-student-c">🧑‍🔬 Maya (Misconception - 46%)</option>
                 </select>
               </div>
+
+              {/* Internal Embedded Database Indicator & Inspector */}
+              <button
+                type="button"
+                onClick={() => {
+                  playClickSound();
+                  onOpenDatabaseInspector?.();
+                }}
+                className="hidden lg:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-100/90 hover:bg-slate-200/90 border border-slate-200 text-xs font-semibold text-slate-700 transition-all cursor-pointer shadow-2xs group"
+                title="Internal Embedded DB (data/user_database.json) - Click to Inspect"
+              >
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <Database className="w-3.5 h-3.5 text-indigo-600 group-hover:scale-110 transition-transform" />
+                <span className="font-mono text-[11px] text-slate-600">DB Live</span>
+              </button>
 
               {/* 5-Step Demo Tour button */}
               <button
@@ -658,11 +798,11 @@ export const Header: React.FC<HeaderProps> = ({
                   </button>
 
                   {accountMenuOpen && (
-                    <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                    <div className="absolute right-0 mt-2 w-72 bg-white rounded-2xl shadow-xl border border-slate-200 p-3 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                       <div className="pb-2.5 mb-2 border-b border-slate-100">
                         <div className="font-bold text-xs text-slate-900 truncate">{currentUser.name}</div>
                         <div className="text-[11px] font-mono text-slate-500 truncate">{currentUser.email}</div>
-                        <div className="mt-1.5 flex items-center gap-1.5">
+                        <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
                           <span className="px-2 py-0.5 rounded-md text-[10px] font-mono font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
                             {currentUser.role.toUpperCase()}
                           </span>
@@ -670,12 +810,40 @@ export const Header: React.FC<HeaderProps> = ({
                             <span className="text-[10px] text-slate-500 truncate max-w-[140px]">{currentUser.institution}</span>
                           )}
                         </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAccountMenuOpen(false);
+                            onOpenDatabaseInspector?.();
+                          }}
+                          className="mt-2 w-full p-2 rounded-xl bg-slate-50 hover:bg-indigo-50/70 border border-slate-200 text-[11px] font-mono text-indigo-700 flex items-center justify-between transition-colors cursor-pointer"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>DB: data/user_database.json</span>
+                          </div>
+                          <span className="font-bold underline text-[10px]">Inspect</span>
+                        </button>
                       </div>
 
                       <div className="space-y-1">
                         <button
                           type="button"
                           onClick={() => {
+                            playClickSound();
+                            setAccountMenuOpen(false);
+                            onOpenDatabaseInspector?.();
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 font-medium transition-colors text-left cursor-pointer"
+                        >
+                          <Database className="w-3.5 h-3.5 text-indigo-600" />
+                          <span>Inspect Internal Database</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClickSound();
                             setAccountMenuOpen(false);
                             onOpenAuth?.('login');
                           }}
@@ -688,6 +856,20 @@ export const Header: React.FC<HeaderProps> = ({
                         <button
                           type="button"
                           onClick={() => {
+                            playClickSound();
+                            setAccountMenuOpen(false);
+                            onOpenAuth?.('signup');
+                          }}
+                          className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs text-slate-700 hover:bg-slate-100 font-medium transition-colors text-left cursor-pointer"
+                        >
+                          <UserPlus className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Create New Account</span>
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            playClickSound();
                             setAccountMenuOpen(false);
                             onSignOut?.();
                           }}
@@ -701,14 +883,14 @@ export const Header: React.FC<HeaderProps> = ({
                   )}
                 </div>
               ) : (
-                <div className="hidden sm:flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5">
                   <button
                     type="button"
                     onClick={() => {
                       playClickSound();
                       onOpenAuth?.('login');
                     }}
-                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-transparent hover:border-indigo-100 transition-all cursor-pointer flex items-center gap-1"
+                    className="px-3 py-1.5 rounded-xl text-xs font-bold text-slate-700 hover:text-indigo-600 hover:bg-indigo-50 border border-slate-200 sm:border-transparent hover:border-indigo-100 transition-all cursor-pointer flex items-center gap-1"
                   >
                     <LogIn className="w-3.5 h-3.5" />
                     <span>Log In</span>

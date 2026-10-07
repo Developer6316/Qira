@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   User, 
   Lock, 
@@ -18,11 +18,14 @@ import {
   KeyRound,
   Shield,
   Zap,
-  Check
+  Check,
+  Database
 } from 'lucide-react';
 import { UserProfile, UserRole } from '../../types';
 import confetti from 'canvas-confetti';
 import { playClickSound, playSuccessChime, playSwooshSound } from '../../utils/soundEffects';
+import { dbRegisterUser, dbLoginUser, dbGetStatus, DatabaseStatus } from '../../services/databaseService';
+import { DatabaseInspectorModal } from '../database/DatabaseInspectorModal';
 
 interface AuthPageProps {
   initialMode?: 'login' | 'signup';
@@ -43,6 +46,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
   const [showForgotPasswordModal, setShowForgotPasswordModal] = useState(false);
   const [forgotEmail, setForgotEmail] = useState('');
   const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  const [dbStatus, setDbStatus] = useState<DatabaseStatus | null>(null);
+  const [showDbInspector, setShowDbInspector] = useState(false);
+
+  useEffect(() => {
+    dbGetStatus().then(status => {
+      if (status) setDbStatus(status);
+    });
+  }, []);
 
   // Form Fields
   const [name, setName] = useState('');
@@ -84,7 +95,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     }
   ];
 
-  const handleSelectDemoAccount = (demo: typeof demoAccounts[0]) => {
+  const handleSelectDemoAccount = async (demo: typeof demoAccounts[0], autoSignIn: boolean = false) => {
     playClickSound();
     setName(demo.name);
     setEmail(demo.email);
@@ -92,6 +103,33 @@ export const AuthPage: React.FC<AuthPageProps> = ({
     setRole(demo.role);
     setInstitution(demo.institution);
     setErrorMessage(null);
+
+    if (autoSignIn) {
+      setIsLoading(true);
+      try {
+        const res = await dbLoginUser(demo.email, 'DemoPass2026!');
+        setIsLoading(false);
+        if (res.success && res.user) {
+          const authenticatedUser = { ...res.user, explicitlyLoggedIn: true };
+          try {
+            localStorage.setItem('qira_auth_user', JSON.stringify(authenticatedUser));
+          } catch (err) {
+            console.error('Storage error', err);
+          }
+          playSuccessChime();
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+          setSuccessMessage(`Signed in as ${demo.name}!`);
+          setTimeout(() => {
+            onAuthSuccess(authenticatedUser);
+          }, 500);
+        } else {
+          setErrorMessage(res.error || 'Failed to sign in demo user.');
+        }
+      } catch (err: any) {
+        setIsLoading(false);
+        setErrorMessage(err.message || 'Error signing in.');
+      }
+    }
   };
 
   // Password strength calculation
@@ -111,7 +149,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
   const passwordStrength = calculatePasswordStrength(password);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     playClickSound();
     setErrorMessage(null);
@@ -139,18 +177,22 @@ export const AuthPage: React.FC<AuthPageProps> = ({
 
     setIsLoading(true);
 
-    setTimeout(() => {
+    try {
+      let res;
+      if (authMode === 'signup') {
+        res = await dbRegisterUser(name, email, password, role, institution);
+      } else {
+        res = await dbLoginUser(email, password);
+      }
+
       setIsLoading(false);
 
-      const authenticatedUser: UserProfile = {
-        id: `user-${Date.now()}`,
-        name: authMode === 'signup' ? name : (name || email.split('@')[0]),
-        email: email.trim().toLowerCase(),
-        role: role,
-        institution: institution || 'Academic Institute',
-        studentId: role === 'learner' ? 'sim-student-b' : undefined,
-        createdAt: new Date().toISOString()
-      };
+      if (!res.success) {
+        setErrorMessage(res.error || 'Authentication error.');
+        return;
+      }
+
+      const authenticatedUser = { ...res.user, explicitlyLoggedIn: true };
 
       // Save user to localStorage
       try {
@@ -166,29 +208,56 @@ export const AuthPage: React.FC<AuthPageProps> = ({
         origin: { y: 0.6 }
       });
 
-      setSuccessMessage(authMode === 'signup' ? 'Account created successfully!' : 'Signed in successfully!');
+      setSuccessMessage(
+        authMode === 'signup' 
+          ? 'Account created and saved to internal database!' 
+          : 'Signed in successfully via internal database!'
+      );
       
       setTimeout(() => {
         onAuthSuccess(authenticatedUser);
       }, 700);
-    }, 800);
+    } catch (err: any) {
+      setIsLoading(false);
+      setErrorMessage(err.message || 'Authentication error. Please check your credentials.');
+    }
   };
 
-  const handleSocialAuth = (provider: string) => {
+  const handleSocialAuth = async (provider: string) => {
     playClickSound();
     setIsLoading(true);
     setErrorMessage(null);
 
-    setTimeout(() => {
+    try {
+      const email = `scholar.${provider.toLowerCase()}@university.edu`;
+      const name = `${provider} Scholar`;
+      const res = await dbRegisterUser(name, email, 'SSOPass2026!', 'learner', `${provider} SSO Verified`);
+      setIsLoading(false);
+      const authenticatedUser = { ...res.user, explicitlyLoggedIn: true };
+
+      try {
+        localStorage.setItem('qira_auth_user', JSON.stringify(authenticatedUser));
+      } catch (err) {
+        console.error('Storage error', err);
+      }
+
+      playSuccessChime();
+      confetti({ particleCount: 40, spread: 50 });
+      setSuccessMessage(`Authenticated with ${provider} and saved to internal database!`);
+      setTimeout(() => {
+        onAuthSuccess(authenticatedUser);
+      }, 600);
+    } catch {
       setIsLoading(false);
       const authenticatedUser: UserProfile = {
         id: `sso-${provider.toLowerCase()}-${Date.now()}`,
         name: `${provider} Scholar`,
-        email: `scholar@${provider.toLowerCase()}.edu`,
+        email: `scholar.${provider.toLowerCase()}@university.edu`,
         role: 'learner',
         institution: `${provider} SSO Verified`,
         studentId: 'sim-student-b',
-        createdAt: new Date().toISOString()
+        createdAt: new Date().toISOString(),
+        explicitlyLoggedIn: true
       };
 
       try {
@@ -200,7 +269,7 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       playSuccessChime();
       confetti({ particleCount: 40, spread: 50 });
       onAuthSuccess(authenticatedUser);
-    }, 600);
+    }
   };
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {
@@ -229,10 +298,10 @@ export const AuthPage: React.FC<AuthPageProps> = ({
             playSwooshSound();
             onBackToApp();
           }}
-          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white bg-slate-800/60 hover:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-700/60 transition-all cursor-pointer shadow-xs"
+          className="inline-flex items-center gap-2 text-xs font-semibold text-slate-300 hover:text-white bg-slate-800/80 hover:bg-slate-700/80 px-3.5 py-2 rounded-xl border border-slate-700/70 transition-all cursor-pointer shadow-xs"
         >
           <ArrowLeft className="w-4 h-4" />
-          <span>Back to Course App</span>
+          <span>Explore as Guest</span>
         </button>
 
         <div className="flex items-center gap-2.5">
@@ -254,9 +323,25 @@ export const AuthPage: React.FC<AuthPageProps> = ({
       <div className="max-w-5xl mx-auto w-full my-auto py-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center z-10">
         {/* Left Column: Brand & Value Proposition Showcase */}
         <div className="lg:col-span-6 space-y-6 text-left">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-mono font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
-            <span>AI-Driven Diagnostic Learning</span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/40 text-xs font-mono font-bold">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>AI-Driven Diagnostic Learning</span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                playClickSound();
+                setShowDbInspector(true);
+              }}
+              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[11px] font-mono font-bold hover:bg-emerald-500/30 transition-all cursor-pointer shadow-xs"
+              title="Click to inspect internal database records"
+            >
+              <Database className="w-3.5 h-3.5 text-emerald-400" />
+              <span>DB: {dbStatus ? `Online (${dbStatus.userCount} users)` : 'Internal DB Active'}</span>
+              <span className="text-[10px] underline ml-1 text-emerald-200">Inspect</span>
+            </button>
           </div>
 
           <h1 className="text-3xl sm:text-4xl lg:text-5xl font-black text-white tracking-tight leading-tight">
@@ -299,20 +384,52 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           </div>
 
           {/* Quick Demo Fill Buttons */}
-          <div className="pt-2 space-y-2">
-            <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold">
-              ⚡ 1-Click Demo Profiles:
-            </span>
-            <div className="flex flex-wrap gap-2">
+          <div className="pt-2 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono text-slate-400 uppercase tracking-wider font-bold">
+                ⚡ 1-Click Demo Profiles:
+              </span>
+              <span className="text-[10px] text-indigo-400 font-mono">
+                Click persona to autofill or Instant Login
+              </span>
+            </div>
+            <div className="space-y-2">
               {demoAccounts.map((d, i) => (
-                <button
+                <div
                   key={i}
-                  type="button"
-                  onClick={() => handleSelectDemoAccount(d)}
-                  className="px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/90 text-slate-200 border border-slate-700 text-xs font-medium transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer flex items-center gap-1.5"
+                  className="flex items-center justify-between p-2 rounded-xl bg-slate-800/70 hover:bg-slate-800 border border-slate-700/80 transition-all gap-2"
                 >
-                  <span>{d.label}</span>
-                </button>
+                  <button
+                    type="button"
+                    onClick={() => handleSelectDemoAccount(d, false)}
+                    className="flex-1 text-left cursor-pointer group"
+                  >
+                    <div className="text-xs font-semibold text-slate-200 group-hover:text-white transition-colors">
+                      {d.label}
+                    </div>
+                    <div className="text-[10px] text-slate-400 font-mono truncate max-w-[230px]">
+                      {d.note}
+                    </div>
+                  </button>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDemoAccount(d, false)}
+                      className="px-2 py-1 rounded-lg bg-slate-700/80 hover:bg-slate-700 text-slate-200 text-[11px] font-semibold transition-all cursor-pointer"
+                      title="Fill fields"
+                    >
+                      Fill
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDemoAccount(d, true)}
+                      className="px-2.5 py-1 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-[11px] shadow-xs cursor-pointer transition-transform active:scale-95 flex items-center gap-1"
+                      title={`Instant Login as ${d.name}`}
+                    >
+                      <span>⚡ Instant Login</span>
+                    </button>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
@@ -655,6 +772,21 @@ export const AuthPage: React.FC<AuthPageProps> = ({
                 </p>
               )}
             </div>
+
+            {/* Quick Guest Preview Option */}
+            <div className="mt-4 pt-3 border-t border-slate-800/60 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  playSwooshSound();
+                  onBackToApp();
+                }}
+                className="text-xs text-slate-400 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1.5 py-1 px-3 rounded-lg hover:bg-slate-800/50"
+              >
+                <span>Prefer to look around first? Continue to App as Guest</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -737,6 +869,14 @@ export const AuthPage: React.FC<AuthPageProps> = ({
           <span className="hover:text-slate-400 cursor-pointer">Institutional SSO</span>
         </div>
       </div>
+
+      {/* Internal Embedded Database Live Inspector Modal */}
+      <DatabaseInspectorModal
+        isOpen={showDbInspector}
+        onClose={() => setShowDbInspector(false)}
+        currentUser={null}
+        masteryMap={{}}
+      />
     </div>
   );
 };

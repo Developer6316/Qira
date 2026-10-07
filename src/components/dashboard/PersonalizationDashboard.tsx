@@ -222,7 +222,10 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
         <div className="flex flex-wrap items-center gap-2 p-1.5 glass-card rounded-2xl max-w-lg">
           <button
             type="button"
-            onClick={() => setActiveCohortView('individual')}
+            onClick={() => {
+              playClickSound();
+              setActiveCohortView('individual');
+            }}
             className={`flex-1 flex items-center justify-center gap-2 py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
               activeCohortView === 'individual'
                 ? 'bg-white text-indigo-700 shadow-xs border border-slate-200'
@@ -236,6 +239,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
           <button
             type="button"
             onClick={() => {
+              playClickSound();
               if (userRole !== 'admin') {
                 onRequestAdminAuth?.('Class-Wide Cohort & Intervention Overseer');
               } else {
@@ -257,6 +261,7 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
         <button
           type="button"
           onClick={() => {
+            playClickSound();
             playSwooshSound();
             setIsReportModalOpen(true);
           }}
@@ -283,8 +288,11 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
               </div>
               <button
                 type="button"
-                onClick={() => onNavigateToTab('remediation')}
-                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-sm"
+                onClick={() => {
+                  playClickSound();
+                  onNavigateToTab('remediation');
+                }}
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-700 text-white text-xs font-bold transition-all shadow-sm cursor-pointer"
               >
                 + Trigger Cohort Remediation
               </button>
@@ -459,7 +467,11 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
                   return (
                     <div
                       key={node.id}
-                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-slate-300 transition-colors"
+                      onClick={() => {
+                        playClickSound();
+                        onNavigateToTab('remediation');
+                      }}
+                      className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between hover:border-slate-300 transition-colors cursor-pointer"
                     >
                       <div className="space-y-0.5">
                         <div className="flex items-center gap-1.5 text-xs font-bold text-slate-900">
@@ -496,7 +508,10 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
 
               <div className="space-y-3">
                 <div 
-                  onClick={() => onNavigateToTab('remediation')}
+                  onClick={() => {
+                    playClickSound();
+                    onNavigateToTab('remediation');
+                  }}
                   className="p-4 rounded-xl bg-gradient-to-r from-amber-50 to-indigo-50 border border-amber-200 hover:border-amber-300 transition-all cursor-pointer space-y-1.5 group shadow-2xs"
                 >
                   <div className="flex items-center justify-between">
@@ -514,7 +529,10 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
                 </div>
 
                 <div 
-                  onClick={() => onNavigateToTab('quiz')}
+                  onClick={() => {
+                    playClickSound();
+                    onNavigateToTab('quiz');
+                  }}
                   className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all cursor-pointer space-y-1 shadow-2xs"
                 >
                   <div className="flex items-center justify-between">
@@ -527,7 +545,10 @@ export const PersonalizationDashboard: React.FC<PersonalizationDashboardProps> =
                 </div>
 
                 <div 
-                  onClick={() => onNavigateToTab('tutor')}
+                  onClick={() => {
+                    playClickSound();
+                    onNavigateToTab('tutor');
+                  }}
                   className="p-4 rounded-xl bg-slate-50 border border-slate-200 hover:border-slate-300 transition-all cursor-pointer space-y-1 shadow-2xs"
                 >
                   <div className="flex items-center justify-between">

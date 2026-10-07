@@ -275,7 +275,10 @@ export const StudentMasteryReportModal: React.FC<StudentMasteryReportModalProps>
           <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={onClose}
+              onClick={() => {
+                playClickSound();
+                onClose();
+              }}
               className="p-2 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
             >
               <X className="w-4 h-4" />
@@ -493,7 +496,10 @@ export const StudentMasteryReportModal: React.FC<StudentMasteryReportModalProps>
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => {
+              playClickSound();
+              onClose();
+            }}
             className="px-4 py-2 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold text-xs transition-colors cursor-pointer"
           >
             Close
